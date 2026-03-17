@@ -40,9 +40,9 @@ export default function SnapPLC() {
       {/* ── NAV ── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2rem", height: 60, background: "rgba(13,17,23,0.85)", backdropFilter: "blur(10px)", borderBottom: "1px solid #30363d" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "-0.5px" }}>
-          <span style={{ color: "#f0a500" }}>Snap</span>
+          <span style={{ color: "#1B6FE4" }}>Snap</span>
           <span>PLC</span>
-          <span style={{ fontSize: "0.65rem", background: "#e05c2a", color: "#fff", padding: "2px 6px", borderRadius: 4, fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>Beta</span>
+          <span style={{ fontSize: "0.65rem", background: "#0D4FA8", color: "#fff", padding: "2px 6px", borderRadius: 4, fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase" }}>Beta</span>
         </div>
         <div style={{ display: "flex", gap: "1.5rem" }}>
           <a href="#how"     style={{ color: "#8b949e", textDecoration: "none", fontSize: "0.9rem" }}>How it works</a>
@@ -55,18 +55,18 @@ export default function SnapPLC() {
         {/* grid */}
         <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#30363d 1px, transparent 1px), linear-gradient(90deg, #30363d 1px, transparent 1px)", backgroundSize: "40px 40px", opacity: 0.25, pointerEvents: "none" }} />
         {/* glow */}
-        <div style={{ position: "absolute", top: "-30%", left: "50%", transform: "translateX(-50%)", width: 700, height: 700, background: "radial-gradient(circle, rgba(240,165,0,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "-30%", left: "50%", transform: "translateX(-50%)", width: 700, height: 700, background: "radial-gradient(circle, rgba(27,111,228,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: 760, margin: "0 auto" }}>
           {/* eyebrow */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#f0a500", fontWeight: 600, border: "1px solid rgba(240,165,0,0.3)", padding: "4px 12px", borderRadius: 999, marginBottom: "1.5rem" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#1B6FE4", fontWeight: 600, border: "1px solid rgba(27,111,228,0.3)", padding: "4px 12px", borderRadius: 999, marginBottom: "1.5rem" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fb950", animation: "pulse 1.8s ease-in-out infinite" }} />
             AI-Powered Industrial Diagnostics
           </div>
 
           <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.4rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-1px", marginBottom: "1.25rem" }}>
             Snap a picture of your PLC.<br />
-            <span style={{ background: "linear-gradient(90deg, #f0a500, #e05c2a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            <span style={{ background: "linear-gradient(90deg, #1B6FE4, #0D4FA8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               Get instant diagnostics.
             </span>
           </h1>
@@ -77,7 +77,7 @@ export default function SnapPLC() {
           </p>
 
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "3rem" }}>
-            <button onClick={scrollToUpload} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.5rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#f0a500", color: "#000" }}>
+            <button onClick={scrollToUpload} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.5rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#1B6FE4", color: "#fff" }}>
               📸 Upload PLC Photo
             </button>
             <a href="#how" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.5rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, background: "transparent", color: "#e6edf3", border: "1px solid #30363d", textDecoration: "none" }}>
@@ -160,7 +160,7 @@ export default function SnapPLC() {
 
           {/* button row */}
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <button onClick={triggerUpload} style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.75rem 1.5rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#f0a500", color: "#000" }}>
+            <button onClick={triggerUpload} style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.75rem 1.5rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#1B6FE4", color: "#fff" }}>
               📂 Upload PLC Photo
             </button>
             <span style={{ fontSize: "0.8rem", color: "#8b949e", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fileName}</span>
@@ -169,14 +169,14 @@ export default function SnapPLC() {
           {/* progress bar */}
           {stage === "progress" && (
             <div style={{ height: 4, background: "#30363d", borderRadius: 999, marginTop: "1rem", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #f0a500, #e05c2a)", borderRadius: 999, transition: "width 0.4s ease" }} />
+              <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #1B6FE4, #0D4FA8)", borderRadius: 999, transition: "width 0.4s ease" }} />
             </div>
           )}
 
           {/* result */}
           {stage === "result" && (
-            <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "rgba(240,165,0,0.07)", border: "1px solid rgba(240,165,0,0.25)", borderRadius: 8, fontSize: "0.85rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 600, marginBottom: "0.4rem", color: "#f0a500" }}>⚠ SnapPLC Analysis Complete</div>
+            <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "rgba(27,111,228,0.07)", border: "1px solid rgba(27,111,228,0.25)", borderRadius: 8, fontSize: "0.85rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 600, marginBottom: "0.4rem", color: "#1B6FE4" }}>⚠ SnapPLC Analysis Complete</div>
               <div style={{ color: "#e6edf3" }}>
                 <div style={{ padding: "2px 0" }}>✔ Cabinet power supply: <strong>nominal</strong></div>
                 <div style={{ padding: "2px 0" }}>✔ I/O modules detected: <strong>4 of 4</strong></div>
@@ -193,7 +193,7 @@ export default function SnapPLC() {
 
       {/* ── HOW IT WORKS ── */}
       <section id="how" style={{ padding: "4rem 2rem", maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ fontSize: "0.75rem", letterSpacing: 2, textTransform: "uppercase", color: "#f0a500", fontWeight: 600, marginBottom: "0.5rem" }}>How it works</div>
+        <div style={{ fontSize: "0.75rem", letterSpacing: 2, textTransform: "uppercase", color: "#1B6FE4", fontWeight: 600, marginBottom: "0.5rem" }}>How it works</div>
         <h2 style={{ fontSize: "1.8rem", fontWeight: 800, marginBottom: "2.5rem", letterSpacing: "-0.5px" }}>From photo to fault in three steps.</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem" }}>
           {[
@@ -202,7 +202,7 @@ export default function SnapPLC() {
             { n: "3", title: "Get Diagnostics",    body: "Receive a plain-English fault report, recommended actions, and a probabilistic blame assignment for your team." },
           ].map((s) => (
             <div key={s.n} style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "1.5rem" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(240,165,0,0.12)", border: "1px solid rgba(240,165,0,0.3)", color: "#f0a500", fontWeight: 700, fontSize: "0.85rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>{s.n}</div>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(27,111,228,0.12)", border: "1px solid rgba(27,111,228,0.3)", color: "#1B6FE4", fontWeight: 700, fontSize: "0.85rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>{s.n}</div>
               <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.4rem" }}>{s.title}</h3>
               <p style={{ fontSize: "0.88rem", color: "#8b949e" }}>{s.body}</p>
             </div>
@@ -213,7 +213,7 @@ export default function SnapPLC() {
       {/* ── REVIEWS ── */}
       <section id="reviews" style={{ padding: "4rem 2rem", background: "#161b22", borderTop: "1px solid #30363d", borderBottom: "1px solid #30363d" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ fontSize: "0.75rem", letterSpacing: 2, textTransform: "uppercase", color: "#f0a500", fontWeight: 600, marginBottom: "0.5rem" }}>Engineer-Approved™</div>
+          <div style={{ fontSize: "0.75rem", letterSpacing: 2, textTransform: "uppercase", color: "#1B6FE4", fontWeight: 600, marginBottom: "0.5rem" }}>Engineer-Approved™</div>
           <h2 style={{ fontSize: "1.8rem", fontWeight: 800, marginBottom: "2.5rem", letterSpacing: "-0.5px" }}>What the floor is saying.</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
             {[
@@ -222,15 +222,15 @@ export default function SnapPLC() {
               { initials: "MT", name: "Mike R.",    role: "Maintenance Tech — 3rd Shift",           stars: 4, text: "\"Told me the E-Stop was physically damaged. Turned out it was just zip-tied shut. Four stars because it was technically correct.\"" },
             ].map((r) => (
               <div key={r.name + r.role} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: "1.5rem", position: "relative" }}>
-                <div style={{ position: "absolute", top: "0.5rem", left: "1rem", fontSize: "4rem", lineHeight: 1, color: "#f0a500", opacity: 0.2, fontFamily: "Georgia, serif" }}>&ldquo;</div>
+                <div style={{ position: "absolute", top: "0.5rem", left: "1rem", fontSize: "4rem", lineHeight: 1, color: "#1B6FE4", opacity: 0.2, fontFamily: "Georgia, serif" }}>&ldquo;</div>
                 <div style={{ display: "flex", gap: 3, marginBottom: "0.75rem" }}>
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} style={{ color: i < r.stars ? "#f0a500" : "#30363d", fontSize: "0.9rem" }}>★</span>
+                    <span key={i} style={{ color: i < r.stars ? "#1B6FE4" : "#30363d", fontSize: "0.9rem" }}>★</span>
                   ))}
                 </div>
                 <p style={{ fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "1rem", fontStyle: "italic" }}>{r.text}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1c2230", border: "1px solid #30363d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700, color: "#f0a500", flexShrink: 0 }}>{r.initials}</div>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1c2230", border: "1px solid #30363d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700, color: "#1B6FE4", flexShrink: 0 }}>{r.initials}</div>
                   <div>
                     <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.name}</div>
                     <div style={{ fontSize: "0.75rem", color: "#8b949e" }}>{r.role}</div>
@@ -246,7 +246,7 @@ export default function SnapPLC() {
       {/* ── FOOTER ── */}
       <footer style={{ padding: "2.5rem 2rem", textAlign: "center", borderTop: "1px solid #30363d" }}>
         <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.5rem" }}>
-          <span style={{ color: "#f0a500" }}>Snap</span>PLC
+          <span style={{ color: "#1B6FE4" }}>Snap</span>PLC
         </div>
         <div style={{ fontSize: "0.8rem", color: "#8b949e", marginBottom: "1rem" }}>AI-powered diagnostics for the plant floor.</div>
         <div style={{ fontSize: "0.75rem", color: "#3a4560", fontStyle: "italic" }}>
