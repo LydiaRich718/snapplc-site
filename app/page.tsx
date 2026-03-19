@@ -148,7 +148,7 @@ export default function SnapPLC() {
         {/* glow */}
         <div style={{ position: "absolute", top: "-20%", left: "30%", width: 800, height: 800, background: "radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}>
+        <div data-grid="hero" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}>
           {/* Left — Text */}
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#00d4ff", fontWeight: 600, border: "1px solid rgba(0,212,255,0.25)", padding: "4px 12px", borderRadius: 999, marginBottom: "1.5rem" }}>
@@ -216,7 +216,7 @@ export default function SnapPLC() {
             <p style={{ color: "#8b949e", fontSize: "0.95rem", marginTop: "0.5rem" }}>Upload any PLC cabinet photo and watch the analysis run in real time.</p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", minHeight: 500 }}>
+          <div data-grid="demo" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", minHeight: 500 }}>
             {/* Left — Image Panel */}
             <div style={{ position: "relative", background: "#0a0e14", border: "1px solid #30363d", borderRadius: 12, overflow: "hidden" }}>
               {/* Panel header */}
@@ -391,7 +391,7 @@ export default function SnapPLC() {
           <div style={{ fontSize: "0.75rem", letterSpacing: 2, textTransform: "uppercase", color: "#00d4ff", fontWeight: 600, marginBottom: "0.5rem" }}>How it works</div>
           <h2 style={{ fontSize: "1.8rem", fontWeight: 800, letterSpacing: "-0.5px" }}>From photo to fault in five steps.</h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "1rem" }}>
+        <div data-grid="how" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "1rem" }}>
           {HOW_IT_WORKS.map((s) => (
             <div key={s.n} style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "1.25rem", position: "relative" }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", fontFamily: "monospace", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.75rem" }}>{s.n}</div>
@@ -409,7 +409,7 @@ export default function SnapPLC() {
             <div style={{ fontSize: "0.75rem", letterSpacing: 2, textTransform: "uppercase", color: "#00d4ff", fontWeight: 600, marginBottom: "0.5rem" }}>Capabilities</div>
             <h2 style={{ fontSize: "1.8rem", fontWeight: 800, letterSpacing: "-0.5px" }}>Built for the plant floor, not the board room.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem" }}>
+          <div data-grid="features" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem" }}>
             {FEATURES.map((f) => (
               <div key={f.title} style={{ background: "#0d1117", border: "1px solid #30363d", borderTop: "2px solid rgba(0,212,255,0.4)", borderRadius: 12, padding: "1.5rem" }}>
                 <div style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>{f.icon}</div>
@@ -558,6 +558,13 @@ export default function SnapPLC() {
         @keyframes drawBox { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         @media (max-width: 768px) {
           nav > div:last-child { display: none !important; }
+          [data-grid="hero"] { grid-template-columns: 1fr !important; gap: 2rem !important; text-align: center; }
+          [data-grid="demo"] { grid-template-columns: 1fr !important; min-height: auto !important; }
+          [data-grid="how"] { grid-template-columns: repeat(2, 1fr) !important; }
+          [data-grid="features"] { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          [data-grid="how"] { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </main>
