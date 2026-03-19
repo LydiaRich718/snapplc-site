@@ -67,6 +67,8 @@ export default function SnapPLC() {
   const [demoStage, setDemoStage] = useState<"idle" | "scanning" | "detecting" | "results">("idle");
   const [visibleLines, setVisibleLines] = useState(0);
   const [visibleBoxes, setVisibleBoxes] = useState(0);
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiError, setAiError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -89,26 +91,60 @@ export default function SnapPLC() {
     setDemoStage("scanning");
     setVisibleLines(0);
     setVisibleBoxes(0);
+    setAiResponse("");
+    setAiError(false);
 
-    // Terminal lines appear during scanning
-    TERMINAL_LINES.forEach((_, i) => {
-      const t = setTimeout(() => setVisibleLines(i + 1), 400 * (i + 1));
-      timeoutsRef.current.push(t);
-    });
+    // Convert image to base64 for API
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
 
-    // Switch to detecting at 2s, start showing boxes
-    const t1 = setTimeout(() => {
-      setDemoStage("detecting");
-      DETECTION_BOXES.forEach((_, i) => {
-        const t = setTimeout(() => setVisibleBoxes(i + 1), 500 * (i + 1));
+      // Terminal lines appear during scanning
+      TERMINAL_LINES.forEach((_, i) => {
+        const t = setTimeout(() => setVisibleLines(i + 1), 400 * (i + 1));
         timeoutsRef.current.push(t);
       });
-    }, 2000);
-    timeoutsRef.current.push(t1);
 
-    // Show results at 5.5s
-    const t2 = setTimeout(() => setDemoStage("results"), 5500);
-    timeoutsRef.current.push(t2);
+      // Switch to detecting at 2s, start showing boxes
+      const t1 = setTimeout(() => {
+        setDemoStage("detecting");
+        DETECTION_BOXES.forEach((_, i) => {
+          const t = setTimeout(() => setVisibleBoxes(i + 1), 500 * (i + 1));
+          timeoutsRef.current.push(t);
+        });
+      }, 2000);
+      timeoutsRef.current.push(t1);
+
+      // At 5s, call the AI API and stream results
+      const t2 = setTimeout(async () => {
+        setDemoStage("results");
+        try {
+          const res = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: base64 }),
+          });
+
+          if (!res.ok) throw new Error("API error");
+
+          const bodyReader = res.body?.getReader();
+          if (!bodyReader) throw new Error("No stream");
+
+          const decoder = new TextDecoder();
+          let text = "";
+          while (true) {
+            const { done, value } = await bodyReader.read();
+            if (done) break;
+            text += decoder.decode(value);
+            setAiResponse(text);
+          }
+        } catch {
+          setAiError(true);
+        }
+      }, 5000);
+      timeoutsRef.current.push(t2);
+    };
+    reader.readAsDataURL(file);
   }
 
   function scrollToDemo() {
@@ -295,58 +331,33 @@ export default function SnapPLC() {
 
                 {demoStage === "results" && (
                   <div style={{ animation: "fadeInUp 0.5s ease both" }}>
-                    {/* Module map */}
-                    <div style={{ marginBottom: "1.5rem" }}>
-                      <div style={{ color: "#00d4ff", fontWeight: 700, marginBottom: "0.5rem", fontSize: "0.8rem" }}>▸ MODULE MAP</div>
-                      <table style={{ width: "100%", fontSize: "0.7rem", borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr style={{ color: "#4a5568", textAlign: "left" }}>
-                            <th style={{ padding: "4px 8px", borderBottom: "1px solid #1c2230" }}>Slot</th>
-                            <th style={{ padding: "4px 8px", borderBottom: "1px solid #1c2230" }}>Part #</th>
-                            <th style={{ padding: "4px 8px", borderBottom: "1px solid #1c2230" }}>Type</th>
-                            <th style={{ padding: "4px 8px", borderBottom: "1px solid #1c2230" }}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {MODULES_TABLE.map((m) => (
-                            <tr key={m.slot}>
-                              <td style={{ padding: "4px 8px", color: "#8b949e" }}>{m.slot}</td>
-                              <td style={{ padding: "4px 8px", color: "#e6edf3" }}>{m.part}</td>
-                              <td style={{ padding: "4px 8px", color: "#8b949e" }}>{m.type}</td>
-                              <td style={{ padding: "4px 8px", color: m.status === "FAULT" ? "#f85149" : "#3fb950", fontWeight: 600 }}>{m.status}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* I/O Summary */}
-                    <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-                      {["32 DI", "16 DO", "16 AI", "0 AO"].map((io) => (
-                        <div key={io} style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 6, padding: "6px 12px", fontSize: "0.75rem" }}>
-                          <span style={{ color: "#00d4ff", fontWeight: 700 }}>{io.split(" ")[0]}</span>{" "}
-                          <span style={{ color: "#8b949e" }}>{io.split(" ")[1]}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Fault Report */}
-                    <div style={{ background: "rgba(248,81,73,0.06)", border: "1px solid rgba(248,81,73,0.25)", borderRadius: 8, padding: "0.75rem", marginBottom: "1rem" }}>
-                      <div style={{ color: "#f85149", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.4rem" }}>▸ FAULT REPORT</div>
-                      <div style={{ fontSize: "0.75rem", color: "#e6edf3", lineHeight: 1.7 }}>
-                        <div>⚠ <strong>Slot 3 — 1756-OB16E</strong>: Output module fault LED active</div>
-                        <div>↳ Probable short on output point DO-03</div>
-                        <div>↳ Communication bus: EtherNet/IP — healthy</div>
+                    {aiError ? (
+                      <div style={{ color: "#f85149", fontSize: "0.8rem" }}>
+                        ⚠ Analysis engine unavailable. Try again later.
                       </div>
-                      <div style={{ marginTop: "0.5rem", fontSize: "0.7rem", color: "#f85149", fontStyle: "italic" }}>
-                        Root cause: Rung 47 modified without documentation. Confidence: 94%. Suspect: unnamed.
+                    ) : aiResponse ? (
+                      <div style={{ fontSize: "0.75rem", color: "#e6edf3", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+                        {aiResponse.split("\n").map((line, i) => {
+                          if (line.startsWith("## ")) {
+                            return <div key={i} style={{ color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", marginTop: i > 0 ? "1.25rem" : 0, marginBottom: "0.4rem" }}>▸ {line.replace("## ", "").toUpperCase()}</div>;
+                          }
+                          if (line.startsWith("|")) {
+                            return <div key={i} style={{ fontFamily: "monospace", color: "#3fb950", fontSize: "0.7rem", padding: "1px 0" }}>{line}</div>;
+                          }
+                          if (line.toLowerCase().includes("fault") || line.toLowerCase().includes("root cause")) {
+                            return <div key={i} style={{ color: "#f85149", padding: "1px 0" }}>{line}</div>;
+                          }
+                          if (line.toLowerCase().includes("confidence")) {
+                            return <div key={i} style={{ color: "#d29922", fontStyle: "italic", marginTop: "0.5rem", padding: "1px 0" }}>{line}</div>;
+                          }
+                          return <div key={i} style={{ color: "#8b949e", padding: "1px 0" }}>{line}</div>;
+                        })}
                       </div>
-                    </div>
-
-                    <div style={{ fontSize: "0.65rem", color: "#4a5568", fontFamily: "monospace", marginBottom: "0.75rem" }}>
-                      Undocumented timer chain detected · Estimated age: 14 years
-                    </div>
-                    <a href="#ladder" style={{ fontSize: "0.75rem", color: "#00d4ff", textDecoration: "none" }}>↓ View inferred ladder logic below</a>
+                    ) : (
+                      <div style={{ color: "#4a5568", fontSize: "0.8rem" }}>
+                        <span style={{ animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }}>●</span> Generating analysis...
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
