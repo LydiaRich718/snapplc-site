@@ -55,6 +55,7 @@ const REVIEWS = [
   { initials: "PM", name: "Gary T.", role: "Plant Manager — Midwest Facility", stars: 5, text: "\"It blamed the controls engineer before production even called.\"" },
   { initials: "CE", name: "Anonymous", role: "Controls Engineer — Not Dave's Facility", stars: 5, text: "\"Operator Mode predicted Dave would press Reset six times. Dave pressed Reset seven times.\"" },
   { initials: "MT", name: "Mike R.", role: "Maintenance Tech — 3rd Shift", stars: 4, text: "\"Told me the E-Stop was physically damaged. Turned out it was just zip-tied shut. Four stars because it was technically correct.\"" },
+  { initials: "JW", name: "Janet W.", role: "Plant Manager — Southeast Region", stars: 5, text: "\"It found logic we didn't even know was running.\"" },
 ];
 
 const TRUST_LOGOS = ["Midwest Controls", "Great Lakes Automation", "Pacific Industrial", "Summit MFG", "Heartland Systems", "Apex Integrators"];
@@ -135,6 +136,7 @@ export default function SnapPLC() {
           <a href="#how" style={{ color: "#8b949e", textDecoration: "none", fontSize: "0.9rem" }}>How it works</a>
           <a href="#features" style={{ color: "#8b949e", textDecoration: "none", fontSize: "0.9rem" }}>Features</a>
           <a href="#reviews" style={{ color: "#8b949e", textDecoration: "none", fontSize: "0.9rem" }}>Reviews</a>
+          <a href="/pricing" style={{ color: "#8b949e", textDecoration: "none", fontSize: "0.9rem" }}>Pricing</a>
         </div>
       </nav>
 
@@ -370,6 +372,9 @@ export default function SnapPLC() {
                       </div>
                     </div>
 
+                    <div style={{ fontSize: "0.65rem", color: "#4a5568", fontFamily: "monospace", marginBottom: "0.75rem" }}>
+                      Undocumented timer chain detected · Estimated age: 14 years
+                    </div>
                     <a href="#ladder" style={{ fontSize: "0.75rem", color: "#00d4ff", textDecoration: "none" }}>↓ View inferred ladder logic below</a>
                   </div>
                 )}
@@ -513,8 +518,14 @@ export default function SnapPLC() {
       <footer style={{ padding: "3rem 2rem", borderTop: "1px solid #30363d" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "center", gap: "2rem", marginBottom: "2rem", flexWrap: "wrap" }}>
-            {["Documentation", "API Reference", "Enterprise", "Pricing", "Careers"].map((link) => (
-              <a key={link} href="#" style={{ color: "#4a5568", textDecoration: "none", fontSize: "0.85rem" }}>{link}</a>
+            {[
+              { label: "Documentation", href: "#" },
+              { label: "API Reference", href: "#" },
+              { label: "Pricing", href: "/pricing" },
+              { label: "Careers", href: "/careers" },
+              { label: "System Status", href: "/status" },
+            ].map((link) => (
+              <a key={link.label} href={link.href} style={{ color: "#4a5568", textDecoration: "none", fontSize: "0.85rem" }}>{link.label}</a>
             ))}
           </div>
           <div style={{ textAlign: "center" }}>
@@ -524,7 +535,7 @@ export default function SnapPLC() {
             <div style={{ fontSize: "0.8rem", color: "#8b949e", marginBottom: "1.5rem" }}>AI-powered diagnostics for the plant floor.</div>
             <div style={{ fontSize: "0.72rem", color: "#3a4560", fontStyle: "italic", lineHeight: 1.8 }}>
               SnapPLC is not responsible for production downtime, finger-pointing, or the realization that Dave has been running the plant in Manual Mode since March.
-              <br />© 2026 SnapPLC Inc. — &ldquo;If it blinks, we&apos;ll blame someone.&rdquo;
+              <br />© 2026 SnapPLC™ — Results may vary.
               <br /><br />
               <span style={{ color: "#2a3448" }}>
                 Powered by 47 layers of neural network and one very tired controls engineer who keeps saying &ldquo;it worked in simulation.&rdquo;
