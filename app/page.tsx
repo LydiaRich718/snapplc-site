@@ -119,6 +119,7 @@ export default function SnapPLC() {
 
   function scrollToDemo() {
     document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(triggerUpload, 600);
   }
 
   return (
@@ -278,7 +279,7 @@ export default function SnapPLC() {
                     ))}
                   </>
                 )}
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
               </div>
             </div>
 
