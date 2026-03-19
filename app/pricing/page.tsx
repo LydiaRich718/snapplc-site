@@ -84,7 +84,7 @@ export default function Pricing() {
 
       {/* PRICING CARDS */}
       <section style={{ padding: "2rem 2rem 4rem", maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", alignItems: "start" }}>
+        <div data-grid="pricing" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", alignItems: "start" }}>
           {PLANS.map((plan) => (
             <div key={plan.name} style={{
               background: "#161b22",
@@ -175,6 +175,13 @@ export default function Pricing() {
         </div>
         <div style={{ fontSize: "0.72rem", color: "#3a4560" }}>© 2026 SnapPLC™ — Results may vary.</div>
       </footer>
+
+      <style>{`
+        @media (max-width: 768px) {
+          nav > div:last-child { display: none !important; }
+          [data-grid="pricing"] { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </main>
   );
 }

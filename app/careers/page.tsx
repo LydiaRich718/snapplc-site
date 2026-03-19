@@ -102,7 +102,7 @@ export default function Careers() {
 
       {/* REQUIREMENTS + BENEFITS */}
       <section style={{ padding: "2rem 2rem 3rem", maxWidth: 800, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+        <div data-grid="benefits" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
           <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "1.5rem" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem" }}>Requirements</h3>
             {[
@@ -173,6 +173,13 @@ export default function Careers() {
         </div>
         <div style={{ fontSize: "0.72rem", color: "#3a4560" }}>© 2026 SnapPLC™ — Results may vary.</div>
       </footer>
+
+      <style>{`
+        @media (max-width: 768px) {
+          nav > div:last-child { display: none !important; }
+          [data-grid="benefits"] { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </main>
   );
 }
