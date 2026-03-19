@@ -147,14 +147,18 @@ export default function SnapPLC() {
             <span style={{ color: "#00d4ff" }}>Snap</span>PLC<span style={{ color: "#00d4ff" }}>™</span>
           </h1>
 
-          <p style={{ fontSize: "clamp(1.1rem, 3vw, 1.4rem)", color: "#8b949e", lineHeight: 1.6, marginBottom: "3rem", maxWidth: 480, margin: "0 auto 3rem" }}>
-            Take a picture of your control panel.<br />
-            Generate PLC logic instantly.
+          <p style={{ fontSize: "clamp(1.1rem, 3vw, 1.4rem)", color: "#8b949e", lineHeight: 1.6, maxWidth: 480, margin: "0 auto 2.5rem" }}>
+            Point your phone at the panel.<br />
+            We&apos;ll handle the rest.
           </p>
 
           <button onClick={scrollToDemo} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "1rem 2.5rem", borderRadius: 10, fontSize: "1.05rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#00d4ff", color: "#000", letterSpacing: "-0.3px" }}>
             Scan Your Panel
           </button>
+
+          <p style={{ fontSize: "0.8rem", color: "#4a5568", marginTop: "1.25rem", letterSpacing: "0.3px" }}>
+            No documentation required.
+          </p>
         </div>
       </section>
 
@@ -475,6 +479,21 @@ export default function SnapPLC() {
           <button onClick={scrollToDemo} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.8rem 2rem", borderRadius: 8, fontSize: "1rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#00d4ff", color: "#000" }}>
             Try Live Demo
           </button>
+        </div>
+      </section>
+
+      {/* ── REAL PRODUCT REVEAL ── */}
+      <section style={{ padding: "3rem 2rem", borderTop: "1px solid #1c2230", textAlign: "center" }}>
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
+          <p style={{ fontSize: "0.95rem", color: "#8b949e", marginBottom: "1rem", lineHeight: 1.6 }}>
+            SnapPLC™ isn&apos;t real. But AI-generated PLC code is.
+          </p>
+          <a href="https://www.plccode.ai" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.75rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, background: "transparent", color: "#00d4ff", border: "1px solid rgba(0,212,255,0.3)", textDecoration: "none" }}>
+            Check out PLCcode.ai →
+          </a>
+          <p style={{ fontSize: "0.75rem", color: "#4a5568", marginTop: "0.75rem" }}>
+            Real AI. Real PLC code generation. No camera required.
+          </p>
         </div>
       </section>
 
