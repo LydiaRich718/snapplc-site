@@ -147,9 +147,12 @@ export default function SnapPLC() {
             <span style={{ color: "#00d4ff" }}>Snap</span>PLC<span style={{ color: "#00d4ff" }}>™</span>
           </h1>
 
-          <p style={{ fontSize: "clamp(1.1rem, 3vw, 1.4rem)", color: "#8b949e", lineHeight: 1.6, maxWidth: 480, margin: "0 auto 2.5rem" }}>
-            Point your phone at the panel.<br />
-            We&apos;ll handle the rest.
+          <p style={{ fontSize: "clamp(1rem, 2.5vw, 1.25rem)", color: "#8b949e", lineHeight: 1.6, maxWidth: 520, margin: "0 auto 0.75rem" }}>
+            The world&apos;s first picture-to-logic generator.
+          </p>
+
+          <p style={{ fontSize: "clamp(0.9rem, 2vw, 1.05rem)", color: "#4a5568", lineHeight: 1.6, maxWidth: 480, margin: "0 auto 2.5rem" }}>
+            Scan your first panel free.
           </p>
 
           <button onClick={scrollToDemo} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "1rem 2.5rem", borderRadius: 10, fontSize: "1.05rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#00d4ff", color: "#000", letterSpacing: "-0.3px" }}>
