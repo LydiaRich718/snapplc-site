@@ -118,46 +118,46 @@ export default function SnapPLC() {
 
           if (!res.ok) throw new Error("API error");
 
-          const bodyReader = res.body?.getReader();
-          if (!bodyReader) throw new Error("No stream");
+          // Read the entire response as text first
+          const fullResponse = await res.text();
 
-          const decoder = new TextDecoder();
-          let fullText = "";
-          let boxesParsed = false;
-
-          while (true) {
-            const { done, value } = await bodyReader.read();
-            if (done) break;
-            fullText += decoder.decode(value);
-
-            // Parse boxes from first line
-            if (!boxesParsed && fullText.includes("\n")) {
-              const firstLine = fullText.split("\n")[0];
-              if (firstLine.startsWith("BOXES:")) {
-                try {
-                  const parsed = JSON.parse(firstLine.replace("BOXES:", ""));
-                  setAiBoxes(parsed);
-                  // Show detecting stage and animate boxes in
-                  setDemoStage("detecting");
-                  parsed.forEach((_: unknown, i: number) => {
-                    const t = setTimeout(() => setVisibleBoxes(i + 1), 500 * (i + 1));
-                    timeoutsRef.current.push(t);
-                  });
-                } catch {
-                  // fall back to no boxes
+          // Split boxes from analysis
+          let analysisText = fullResponse;
+          if (fullResponse.startsWith("BOXES:")) {
+            const newlineIdx = fullResponse.indexOf("\n");
+            if (newlineIdx !== -1) {
+              const boxLine = fullResponse.substring(6, newlineIdx);
+              analysisText = fullResponse.substring(newlineIdx + 1);
+              try {
+                const parsed = JSON.parse(boxLine);
+                setAiBoxes(parsed);
+                setDemoStage("detecting");
+                // Animate boxes in one by one
+                for (let i = 0; i < parsed.length; i++) {
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                  setVisibleBoxes(i + 1);
                 }
-                boxesParsed = true;
-                // Remove the BOXES line from the text
-                fullText = fullText.substring(fullText.indexOf("\n") + 1);
+                // Pause after all boxes shown
+                await new Promise(resolve => setTimeout(resolve, 800));
+              } catch {
+                // no boxes, continue
               }
             }
+          }
 
-            // Show results once we have analysis text
-            if (boxesParsed && fullText.trim().length > 0) {
-              setDemoStage("results");
-              setAiResponse(fullText);
+          // Show results
+          setDemoStage("results");
+          // Stream the text character by character for effect
+          let displayed = "";
+          const chars = analysisText.split("");
+          for (let i = 0; i < chars.length; i++) {
+            displayed += chars[i];
+            if (i % 3 === 0) { // update every 3 chars for performance
+              setAiResponse(displayed);
+              await new Promise(resolve => setTimeout(resolve, 8));
             }
           }
+          setAiResponse(analysisText);
         } catch {
           setAiError(true);
           setDemoStage("results");
