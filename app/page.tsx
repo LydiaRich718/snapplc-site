@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 /* ───────────────────── DATA ───────────────────── */
@@ -60,11 +59,6 @@ const REVIEWS = [
 
 const TRUST_LOGOS = ["Midwest Controls", "Great Lakes Automation", "Pacific Industrial", "Summit MFG", "Heartland Systems", "Apex Integrators"];
 
-const HERO_CHIPS = [
-  { label: "CPU: 1756-L85E", top: "18%", left: "12%", delay: "1s" },
-  { label: "DI: 32pt", top: "42%", left: "68%", delay: "2s" },
-  { label: "FAULT: DO-03", top: "65%", left: "25%", delay: "3s", fault: true },
-];
 
 /* ───────────────────── COMPONENT ───────────────────── */
 
@@ -142,56 +136,25 @@ export default function SnapPLC() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ position: "relative", overflow: "hidden", padding: "6rem 2rem 4rem" }}>
+      <section style={{ position: "relative", overflow: "hidden", padding: "8rem 2rem 6rem" }}>
         {/* grid background */}
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#30363d 1px, transparent 1px), linear-gradient(90deg, #30363d 1px, transparent 1px)", backgroundSize: "40px 40px", opacity: 0.2, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#30363d 1px, transparent 1px), linear-gradient(90deg, #30363d 1px, transparent 1px)", backgroundSize: "40px 40px", opacity: 0.12, pointerEvents: "none" }} />
         {/* glow */}
-        <div style={{ position: "absolute", top: "-20%", left: "30%", width: 800, height: 800, background: "radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "-30%", left: "50%", transform: "translateX(-50%)", width: 900, height: 900, background: "radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        <div data-grid="hero" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}>
-          {/* Left — Text */}
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#00d4ff", fontWeight: 600, border: "1px solid rgba(0,212,255,0.25)", padding: "4px 12px", borderRadius: 999, marginBottom: "1.5rem" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fb950", animation: "pulse 1.8s ease-in-out infinite" }} />
-              AI-Powered Industrial Diagnostics
-            </div>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <h1 style={{ fontSize: "clamp(2.5rem, 7vw, 4.5rem)", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-2px", marginBottom: "1.5rem" }}>
+            <span style={{ color: "#00d4ff" }}>Snap</span>PLC<span style={{ color: "#00d4ff" }}>™</span>
+          </h1>
 
-            <h1 style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-1.5px", marginBottom: "1.5rem" }}>
-              One photo.<br />
-              Full system diagnostics.<br />
-              <span style={{ background: "linear-gradient(90deg, #00d4ff, #0077b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                Zero downtime.
-              </span>
-            </h1>
+          <p style={{ fontSize: "clamp(1.1rem, 3vw, 1.4rem)", color: "#8b949e", lineHeight: 1.6, marginBottom: "3rem", maxWidth: 480, margin: "0 auto 3rem" }}>
+            Take a picture of your control panel.<br />
+            Generate PLC logic instantly.
+          </p>
 
-            <p style={{ fontSize: "1.05rem", color: "#8b949e", maxWidth: 520, lineHeight: 1.7, marginBottom: "2rem" }}>
-              SnapPLC uses industrial computer vision to identify PLC hardware, reconstruct I/O mapping, and generate ladder logic insights from a single image. Supports Allen-Bradley, Siemens, Mitsubishi, and 40+ other platforms.
-            </p>
-
-            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              <button onClick={scrollToDemo} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.8rem 1.75rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#00d4ff", color: "#000" }}>
-                Try Live Demo
-              </button>
-              <a href="#how" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.8rem 1.75rem", borderRadius: 8, fontSize: "0.95rem", fontWeight: 600, background: "transparent", color: "#e6edf3", border: "1px solid #30363d", textDecoration: "none" }}>
-                See How It Works
-              </a>
-            </div>
-          </div>
-
-          {/* Right — Scan Visual */}
-          <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", border: "1px solid #30363d", boxShadow: "0 32px 80px rgba(0,0,0,0.6)", aspectRatio: "4/3", background: "#0a0e14" }}>
-            <Image src="/SnapPLC.png" alt="SnapPLC analyzing a PLC control cabinet" width={1320} height={880} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.7 }} priority />
-            {/* scan line */}
-            <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "#00d4ff", boxShadow: "0 0 20px #00d4ff, 0 0 60px rgba(0,212,255,0.3)", animation: "scanLine 3s ease-in-out infinite", zIndex: 2 }} />
-            {/* floating chips */}
-            {HERO_CHIPS.map((chip) => (
-              <div key={chip.label} style={{ position: "absolute", top: chip.top, left: chip.left, background: "rgba(10,14,20,0.85)", border: `1px solid ${chip.fault ? "#f85149" : "rgba(0,212,255,0.5)"}`, borderRadius: 6, padding: "3px 8px", fontSize: "0.65rem", fontFamily: "monospace", color: chip.fault ? "#f85149" : "#00d4ff", animation: `chipFadeIn 0.6s ease ${chip.delay} both, chipFloat 3s ease-in-out ${chip.delay} infinite`, zIndex: 3, whiteSpace: "nowrap" }}>
-                {chip.label}
-              </div>
-            ))}
-            {/* gradient overlay */}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "30%", background: "linear-gradient(to top, #0d1117, transparent)", pointerEvents: "none" }} />
-          </div>
+          <button onClick={scrollToDemo} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "1rem 2.5rem", borderRadius: 10, fontSize: "1.05rem", fontWeight: 600, cursor: "pointer", border: "none", background: "#00d4ff", color: "#000", letterSpacing: "-0.3px" }}>
+            Scan Your Panel
+          </button>
         </div>
       </section>
 
