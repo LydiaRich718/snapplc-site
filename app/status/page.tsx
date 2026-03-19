@@ -103,9 +103,9 @@ export default function Status() {
         <p style={{ color: "#8b949e", fontSize: "0.9rem", marginBottom: "1rem" }}>
           For urgent issues, please contact support or stare silently at the control panel for several minutes.
         </p>
-        <button style={{ padding: "0.6rem 1.5rem", borderRadius: 8, fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", border: "1px solid #30363d", background: "transparent", color: "#e6edf3" }}>
+        <a href="/support" style={{ display: "inline-block", padding: "0.6rem 1.5rem", borderRadius: 8, fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", border: "1px solid #30363d", background: "transparent", color: "#e6edf3", textDecoration: "none" }}>
           Contact Support
-        </button>
+        </a>
         <div style={{ marginTop: "0.75rem", fontSize: "0.7rem", color: "#4a5568", fontStyle: "italic" }}>
           Average response time: &ldquo;we&apos;re looking into it&rdquo;
         </div>
