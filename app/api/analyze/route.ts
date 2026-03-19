@@ -12,24 +12,28 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "No image provided" }, { status: 400 });
     }
 
-    // Step 1: Get detection box positions (fast, non-streaming)
-    const boxResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://www.snapplc.com",
-        "X-Title": "SnapPLC",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
-        messages: [
-          {
-            role: "system",
-            content: `You analyze images and identify 4-6 distinct visual regions of interest. For each region, provide a bounding box as percentage coordinates and a humorous PLC-themed label.
+    const headers = {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://www.snapplc.com",
+      "X-Title": "SnapPLC",
+    };
 
-IMPORTANT: You must respond with ONLY valid JSON, no markdown, no explanation. The format must be exactly:
-[{"label":"CPU: 1756-L85E","confidence":97.2,"top":10,"left":5,"w":20,"h":25,"fault":false},...]
+    // Run both API calls in parallel
+    const [boxRes, analysisRes] = await Promise.all([
+      // Call 1: Get detection box positions
+      fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-001",
+          messages: [
+            {
+              role: "system",
+              content: `You analyze images and identify 4-6 distinct visual regions of interest. For each region, provide a bounding box as percentage coordinates and a humorous PLC-themed label.
+
+IMPORTANT: You must respond with ONLY a valid JSON array, no markdown, no code fences, no explanation. Example:
+[{"label":"CPU: 1756-L85E","confidence":97.2,"top":10,"left":5,"w":20,"h":25,"fault":false}]
 
 Rules:
 - top, left, w, h are percentages (0-100) representing position and size within the image
@@ -40,51 +44,31 @@ Rules:
 - Boxes should NOT overlap
 - If it's a person, box their face, hands, glasses, phone, etc. with PLC labels
 - If it's a real PLC cabinet, box actual modules you see
-- Keep boxes reasonably sized (w: 10-30, h: 10-35)`
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Identify 4-6 regions in this image and return bounding boxes as JSON." },
-              { type: "image_url", image_url: { url: image } }
-            ]
-          }
-        ],
-        max_tokens: 500,
+- Keep boxes reasonably sized (w: 10-30, h: 10-35)
+- Return ONLY the JSON array, nothing else`
+            },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Identify 4-6 regions in this image and return bounding boxes as a JSON array." },
+                { type: "image_url", image_url: { url: image } }
+              ]
+            }
+          ],
+          max_tokens: 500,
+        }),
       }),
-    });
 
-    let boxes = "[]";
-    if (boxResponse.ok) {
-      const boxData = await boxResponse.json();
-      const raw = boxData.choices?.[0]?.message?.content || "[]";
-      // Extract JSON array from response (in case it wraps in markdown)
-      const match = raw.match(/\[[\s\S]*\]/);
-      if (match) {
-        try {
-          JSON.parse(match[0]); // validate
-          boxes = match[0];
-        } catch {
-          // keep default empty array
-        }
-      }
-    }
-
-    // Step 2: Stream the full analysis
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://www.snapplc.com",
-        "X-Title": "SnapPLC",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
-        messages: [
-          {
-            role: "system",
-            content: `You are SnapPLC™, an AI that analyzes photos of PLC control cabinets and generates diagnostics. You are deadpan, confident, and slightly absurd — this is a humorous April Fools product, but your analysis should sound technically convincing at first glance.
+      // Call 2: Get full analysis text
+      fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-001",
+          messages: [
+            {
+              role: "system",
+              content: `You are SnapPLC™, an AI that analyzes photos of PLC control cabinets and generates diagnostics. You are deadpan, confident, and slightly absurd — this is a humorous April Fools product, but your analysis should sound technically convincing at first glance.
 
 When given an image, respond with EXACTLY this format (use the markdown headers exactly as shown):
 
@@ -106,69 +90,43 @@ Identify one "fault" based on something specific you see in the image — make i
 End with an overall confidence score. Always make it something like "62% (feels right)" or "78% (probably fine)".
 
 If the image is NOT a control panel, still analyze it as if it were — find "modules" and "wiring" in whatever you see. Reference specific objects in the photo. This makes it funnier.`
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Analyze this control panel image. Identify modules, reconstruct ladder logic, and generate a fault report." },
-              { type: "image_url", image_url: { url: image } }
-            ]
-          }
-        ],
-        max_tokens: 1000,
-        stream: true,
+            },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Analyze this control panel image. Identify modules, reconstruct ladder logic, and generate a fault report." },
+                { type: "image_url", image_url: { url: image } }
+              ]
+            }
+          ],
+          max_tokens: 1000,
+        }),
       }),
-    });
+    ]);
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("OpenRouter error:", error);
-      return Response.json({ error: "Analysis failed" }, { status: 500 });
+    // Parse boxes
+    let boxes: unknown[] = [];
+    if (boxRes.ok) {
+      const boxData = await boxRes.json();
+      const raw = boxData.choices?.[0]?.message?.content || "[]";
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) {
+        try {
+          boxes = JSON.parse(match[0]);
+        } catch {
+          // keep empty
+        }
+      }
     }
 
-    // Stream: first line is JSON boxes, then analysis text
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        // Send boxes as first line
-        controller.enqueue(encoder.encode("BOXES:" + boxes + "\n"));
+    // Parse analysis
+    let analysis = "";
+    if (analysisRes.ok) {
+      const analysisData = await analysisRes.json();
+      analysis = analysisData.choices?.[0]?.message?.content || "Analysis unavailable.";
+    }
 
-        const reader = response.body?.getReader();
-        if (!reader) {
-          controller.close();
-          return;
-        }
-
-        const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n").filter((line) => line.startsWith("data: "));
-
-          for (const line of lines) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                controller.enqueue(encoder.encode(content));
-              }
-            } catch {
-              // skip malformed chunks
-            }
-          }
-        }
-        controller.close();
-      },
-    });
-
-    return new Response(stream, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
+    return Response.json({ boxes, analysis });
   } catch (error) {
     console.error("Analysis error:", error);
     return Response.json({ error: "Analysis failed" }, { status: 500 });

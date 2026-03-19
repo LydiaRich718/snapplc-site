@@ -107,7 +107,7 @@ export default function SnapPLC() {
         timeoutsRef.current.push(t);
       });
 
-      // At 2s, call the AI API — boxes come back first, then stream
+      // At 2s, call the AI API
       const t1 = setTimeout(async () => {
         try {
           const res = await fetch("/api/analyze", {
@@ -117,47 +117,31 @@ export default function SnapPLC() {
           });
 
           if (!res.ok) throw new Error("API error");
+          const data = await res.json();
 
-          // Read the entire response as text first
-          const fullResponse = await res.text();
-
-          // Split boxes from analysis
-          let analysisText = fullResponse;
-          if (fullResponse.startsWith("BOXES:")) {
-            const newlineIdx = fullResponse.indexOf("\n");
-            if (newlineIdx !== -1) {
-              const boxLine = fullResponse.substring(6, newlineIdx);
-              analysisText = fullResponse.substring(newlineIdx + 1);
-              try {
-                const parsed = JSON.parse(boxLine);
-                setAiBoxes(parsed);
-                setDemoStage("detecting");
-                // Animate boxes in one by one
-                for (let i = 0; i < parsed.length; i++) {
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                  setVisibleBoxes(i + 1);
-                }
-                // Pause after all boxes shown
-                await new Promise(resolve => setTimeout(resolve, 800));
-              } catch {
-                // no boxes, continue
-              }
+          // Show detection boxes one by one
+          if (data.boxes && data.boxes.length > 0) {
+            setAiBoxes(data.boxes);
+            setDemoStage("detecting");
+            for (let i = 0; i < data.boxes.length; i++) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+              setVisibleBoxes(i + 1);
             }
+            await new Promise(resolve => setTimeout(resolve, 800));
           }
 
-          // Show results
+          // Typewriter the analysis text
           setDemoStage("results");
-          // Stream the text character by character for effect
+          const text = data.analysis || "Analysis unavailable.";
           let displayed = "";
-          const chars = analysisText.split("");
-          for (let i = 0; i < chars.length; i++) {
-            displayed += chars[i];
-            if (i % 3 === 0) { // update every 3 chars for performance
+          for (let i = 0; i < text.length; i++) {
+            displayed += text[i];
+            if (i % 3 === 0) {
               setAiResponse(displayed);
               await new Promise(resolve => setTimeout(resolve, 8));
             }
           }
-          setAiResponse(analysisText);
+          setAiResponse(text);
         } catch {
           setAiError(true);
           setDemoStage("results");
