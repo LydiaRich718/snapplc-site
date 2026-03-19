@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     images: ["/opengraph-image"],
   },
   verification: {
-    google: "YOUR_GOOGLE_VERIFICATION_CODE",
+    google: "5WO48mcrmvNDpD7ajc1mthZhKlmZwTHupNTrMkjgRtY",
   },
   robots: {
     index: true,
