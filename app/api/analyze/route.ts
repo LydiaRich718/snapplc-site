@@ -30,39 +30,46 @@ export async function POST(req: NextRequest) {
           messages: [
             {
               role: "system",
-              content: `You analyze images and identify 4-6 distinct objects or regions. Your job is to:
+              content: `You are a precise object detector. Look at the image carefully and pick exactly 3 of the most visually obvious and distinct objects.
 
-1. Identify what each object ACTUALLY is (a shoe, a face, a coffee mug, a monitor, a wire, etc.)
-2. Give it a funny but technical-sounding PLC module label that references the real object
+For each object:
+1. Identify what it ACTUALLY is (a shoe, a face, a coffee mug, etc.)
+2. Determine its EXACT position as a percentage of the image dimensions:
+   - "top" = percentage from the top edge of the image to the TOP edge of the object
+   - "left" = percentage from the left edge of the image to the LEFT edge of the object
+   - "w" = the object's width as a percentage of the total image width
+   - "h" = the object's height as a percentage of the total image height
+3. Give it a funny PLC module label that references the real object
 
-Examples of good labels:
+POSITIONING IS CRITICAL. Think about it step by step:
+- If an object is in the center of the image, top should be ~35-45 and left should be ~35-45
+- If an object is in the top-left corner, top should be ~5-15 and left should be ~5-15
+- If an object is at the bottom, top should be ~65-85
+- Size the box to tightly fit the object, not too big, not too small
+
+Label examples:
 - A shoe → "LV Shoe Module: 1756-SHOE"
 - A coffee mug → "Liquid Level Sensor: 1756-LL16"
 - A person's face → "HMI Display Unit: S7-FACE"
 - A keyboard → "Operator Input Terminal: 1756-OIT"
-- A phone → "Wireless Comm Module: 1756-WCM"
 - A monitor → "Visual Diagnostic Panel: 1756-VDP"
-- A cable → "Undocumented I/O Link: 1756-UIL"
 - A post-it note → "Temporary Fix Documentation: REV-2007"
 - Actual PLC modules → use their real part numbers
 
-IMPORTANT: You must respond with ONLY a valid JSON array, no markdown, no code fences, no explanation. Example:
+Respond with ONLY a valid JSON array. No markdown, no code fences, no explanation.
 [{"label":"LV Shoe Module: 1756-SHOE","confidence":95.2,"top":60,"left":10,"w":20,"h":25,"fault":false}]
 
 Rules:
-- top, left, w, h are percentages (0-100) representing position and size within the image
-- Place boxes precisely ON the objects you identify — be accurate about where things are
-- One item should have "fault":true — pick the funniest object for the fault
-- confidence should be 85-99
-- Boxes should NOT overlap
-- Keep boxes reasonably sized (w: 10-30, h: 10-35)
-- The label should make it clear what the object actually is while sounding technical
-- Return ONLY the JSON array, nothing else`
+- EXACTLY 3 objects, no more
+- One must have "fault":true — pick the funniest object
+- confidence 85-99
+- Boxes must NOT overlap
+- Return ONLY the JSON array`
             },
             {
               role: "user",
               content: [
-                { type: "text", text: "Identify 4-6 regions in this image and return bounding boxes as a JSON array." },
+                { type: "text", text: "Pick exactly 3 distinct objects in this image. For each, carefully estimate its exact position and size as percentages of the image dimensions. Return bounding boxes as a JSON array." },
                 { type: "image_url", image_url: { url: image } }
               ]
             }
