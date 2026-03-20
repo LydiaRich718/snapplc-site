@@ -95,39 +95,51 @@ export default function SnapPLC() {
     const img = imgRef.current;
     if (!canvas || !img || !detections?.length) return;
 
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    // Use the actual rendered size of the image element, not naturalWidth
+    const rect = img.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, rect.width, rect.height);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const displayW = rect.width;
+    const displayH = rect.height;
 
     detections.forEach((d) => {
-      const x = d.bbox.x * canvas.width;
-      const y = d.bbox.y * canvas.height;
-      const w = d.bbox.width * canvas.width;
-      const h = d.bbox.height * canvas.height;
+      const x = d.bbox.x * displayW;
+      const y = d.bbox.y * displayH;
+      const w = d.bbox.width * displayW;
+      const h = d.bbox.height * displayH;
 
       // Box
       ctx.strokeStyle = "#00d4ff";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
 
-      // Label background
+      // Label
       const label = `${d.plc_translation} — ${Math.round(d.confidence * 100)}%`;
-      ctx.font = "bold 14px monospace";
+      const fontSize = Math.max(10, Math.min(14, displayW / 35));
+      ctx.font = `bold ${fontSize}px monospace`;
       const textWidth = ctx.measureText(label).width;
-      ctx.fillStyle = "rgba(10,14,20,0.9)";
-      ctx.fillRect(x, y - 22, textWidth + 12, 20);
+      const labelH = fontSize + 6;
+      const labelY = y > labelH + 4 ? y - labelH - 2 : y + h + 2;
 
-      // Label border
+      // Label background
+      ctx.fillStyle = "rgba(10,14,20,0.9)";
+      ctx.fillRect(x, labelY, textWidth + 10, labelH);
       ctx.strokeStyle = "rgba(0,212,255,0.5)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(x, y - 22, textWidth + 12, 20);
+      ctx.strokeRect(x, labelY, textWidth + 10, labelH);
 
       // Label text
       ctx.fillStyle = "#00d4ff";
-      ctx.fillText(label, x + 6, y - 7);
+      ctx.fillText(label, x + 5, labelY + fontSize);
     });
   }
 
