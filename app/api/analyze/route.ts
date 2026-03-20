@@ -12,59 +12,61 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "No image provided" }, { status: 400 });
     }
 
-    const headers = {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://www.snapplc.com",
-      "X-Title": "SnapPLC",
-    };
-
-    // Single call: detections + analysis together so they stay in sync
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers,
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://www.snapplc.com",
+        "X-Title": "SnapPLC",
+      },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
         messages: [
           {
             role: "system",
-            content: `You are the visual detection engine for SnapPLC™, a satirical PLC diagnostic web app.
+            content: `You are the vision + analysis engine for a satirical PLC diagnostic web app called SnapPLC.
 
-Your job is to analyze the uploaded image and identify ONLY 3 clearly visible real objects in the photo. These detections must be visually grounded to the actual object location in the image.
+Analyze the provided image and return a structured JSON response.
 
-CRITICAL RULES:
-1. Detect only objects that are actually visible in the image.
-2. Do NOT invent or guess objects that are not clearly seen.
-3. Do NOT place boxes on empty space, background, decorations, shadows, or vague areas.
-4. Each box must tightly surround the real object it refers to.
-5. Choose the 3 most visually obvious objects in the image.
-6. If fewer than 3 clear objects are available, return fewer.
-7. Prefer large, distinct foreground objects over tiny or ambiguous ones.
-8. The label must match the boxed object exactly.
-9. The analysis must refer ONLY to the objects that were boxed.
-10. Output normalized bounding boxes using percentages:
-   x: left edge as percentage of image width (0-100)
-   y: top edge as percentage of image height (0-100)
-   width: box width as percentage of image width
-   height: box height as percentage of image height
+GOAL:
+Produce results that feel BOTH:
+1. Visually grounded (boxes must match real objects)
+2. Humorously industrial (fake PLC-style analysis)
 
-The app is a joke, so the descriptions can be funny and fake-industrial, BUT the visual grounding must be accurate.
+------------------------
+DETECTION RULES (VERY IMPORTANT)
+------------------------
+- Return ONLY 2 or 3 detections (never more than 3)
+- Detect ONLY clearly visible, real objects in the image
+- Prefer large, obvious foreground objects
+- Each bounding box must tightly surround the object
+- Do NOT place boxes on empty space
+- Do NOT guess or hallucinate objects
+- If unsure, SKIP the object
+- NEVER describe an object that does not have a box
 
-GOOD EXAMPLE:
-- If you see a cup of ice, box the cup itself and describe it humorously as a cooling module.
-- If you see a shoe, the box must go on the visible shoe only, not nearby decor or empty space.
+If the image is NOT a PLC cabinet:
+→ detect normal objects and reinterpret them as industrial components
 
-BAD EXAMPLE:
-- Boxing a random area and calling it a shoe
-- Labeling something that is not visible
-- Referring in the analysis to objects that were not boxed
+------------------------
+HUMOR STYLE
+------------------------
+- Humor comes from the naming and descriptions, NOT from incorrect detection
+- Examples:
+  - coffee → "Portable Energy Reservoir Module"
+  - water → "Liquid Media Displacement Unit"
+  - tissue box → "Contingency Substrate Dispenser"
+- Tone: confident, slightly absurd, technical, deadpan
 
-Return ONLY valid JSON in this exact schema, no markdown, no code fences:
+------------------------
+OUTPUT FORMAT (STRICT JSON ONLY)
+------------------------
 
 {
   "detections": [
     {
-      "label": "short visible object name",
+      "label": "real object name",
       "funny_name": "fake PLC-style component name",
       "confidence": 95.2,
       "bbox": {
@@ -74,22 +76,44 @@ Return ONLY valid JSON in this exact schema, no markdown, no code fences:
         "height": 25
       },
       "fault": false,
-      "reason": "brief explanation of what visible object this really is"
+      "one_liner": "one funny sentence about THIS object only",
+      "io_type": "Analog Input",
+      "io_tag": "short fake signal name"
     }
   ],
-  "analysis": {
-    "module_detection": "2-3 sentences describing each detected object as a PLC module. Reference the exact objects you boxed. Deadpan technical tone.",
-    "io_summary": "I/O count based on what you see, e.g. '1 Analog Input (Chill Level), 1 Digital Output (Footwear Actuator)'",
-    "ladder_logic": "2-3 rungs of ladder logic in text format referencing the objects, e.g. |--] [--I:1/0---] [--I:1/3---( )--O:2/0--| labeled with a purpose like 'Coffee Refill Interlock Circuit'",
-    "fault_report": "Pick the funniest boxed object. Write a serious fault report with an absurd root cause in dry technical language.",
-    "confidence": "Overall confidence score like '62% (feels right)'"
-  }
-}`
+
+  "module_detection_lines": [
+    "One line per detection referencing the funny_name and confidence"
+  ],
+
+  "io_summary_lines": [
+    "One line per signal (based on detections)"
+  ],
+
+  "ladder_logic_lines": [
+    "ASCII ladder logic line",
+    "Short description line"
+  ],
+
+  "fault_report": "Short funny fault report referencing ONE of the detected items",
+
+  "confidence_text": "e.g. 78% (feels right)"
+}
+
+------------------------
+CRITICAL RULES
+------------------------
+- JSON ONLY (no markdown, no code fences, no extra text)
+- Each detection must have a matching visible object
+- Each object must have a box
+- Keep boxes tight and correctly placed
+- One detection must have "fault": true — pick the funniest object
+- If detection is uncertain, return fewer items instead of guessing`
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Analyze this image. Identify exactly 3 distinct visible objects, provide tight bounding boxes, and generate a humorous PLC analysis. Return ONLY valid JSON." },
+              { type: "text", text: "Analyze this image. Return ONLY valid JSON with detections and analysis." },
               { type: "image_url", image_url: { url: image } }
             ]
           }
@@ -107,7 +131,7 @@ Return ONLY valid JSON in this exact schema, no markdown, no code fences:
     const data = await res.json();
     const raw = data.choices?.[0]?.message?.content || "{}";
 
-    // Extract JSON from response (handle potential markdown wrapping)
+    // Extract JSON from response
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return Response.json({ error: "Invalid response format" }, { status: 500 });

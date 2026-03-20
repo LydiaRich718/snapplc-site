@@ -69,7 +69,7 @@ export default function SnapPLC() {
   const [visibleBoxes, setVisibleBoxes] = useState(0);
   const [aiResponse, setAiResponse] = useState("");
   const [aiError, setAiError] = useState(false);
-  const [aiBoxes, setAiBoxes] = useState<Array<{ label: string; funny_name: string; confidence: number; bbox: { x: number; y: number; width: number; height: number }; fault?: boolean; reason?: string }>>([]);
+  const [aiBoxes, setAiBoxes] = useState<Array<{ label: string; funny_name: string; confidence: number; bbox: { x: number; y: number; width: number; height: number }; fault?: boolean; one_liner?: string; io_type?: string; io_tag?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -132,14 +132,21 @@ export default function SnapPLC() {
 
           // Build analysis text from structured response
           setDemoStage("results");
-          const a = data.analysis;
           let text = "";
-          if (a) {
-            if (a.module_detection) text += "## Module Detection\n" + a.module_detection + "\n\n";
-            if (a.io_summary) text += "## I/O Summary\n" + a.io_summary + "\n\n";
-            if (a.ladder_logic) text += "## Ladder Logic\n" + a.ladder_logic + "\n\n";
-            if (a.fault_report) text += "## Fault Report\n" + a.fault_report + "\n\n";
-            if (a.confidence) text += "## Confidence\n" + a.confidence;
+          if (data.module_detection_lines?.length) {
+            text += "## Module Detection\n" + data.module_detection_lines.join("\n") + "\n\n";
+          }
+          if (data.io_summary_lines?.length) {
+            text += "## I/O Summary\n" + data.io_summary_lines.join("\n") + "\n\n";
+          }
+          if (data.ladder_logic_lines?.length) {
+            text += "## Ladder Logic\n" + data.ladder_logic_lines.join("\n") + "\n\n";
+          }
+          if (data.fault_report) {
+            text += "## Fault Report\n" + data.fault_report + "\n\n";
+          }
+          if (data.confidence_text) {
+            text += "## Confidence\n" + data.confidence_text;
           }
           if (!text) text = "Analysis unavailable.";
 
