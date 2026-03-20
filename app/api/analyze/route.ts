@@ -19,140 +19,102 @@ export async function POST(req: NextRequest) {
       "X-Title": "SnapPLC",
     };
 
-    // Run both API calls in parallel
-    const [boxRes, analysisRes] = await Promise.all([
-      // Call 1: Get detection box positions
-      fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-001",
-          messages: [
-            {
-              role: "system",
-              content: `You are a precise object detector. Look at the image carefully and pick exactly 3 of the most visually obvious and distinct objects.
+    // Single call: detections + analysis together so they stay in sync
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          {
+            role: "system",
+            content: `You are the visual detection engine for SnapPLC™, a satirical PLC diagnostic web app.
 
-For each object:
-1. Identify what it ACTUALLY is (a shoe, a face, a coffee mug, etc.)
-2. Determine its EXACT position as a percentage of the image dimensions:
-   - "top" = percentage from the top edge of the image to the TOP edge of the object
-   - "left" = percentage from the left edge of the image to the LEFT edge of the object
-   - "w" = the object's width as a percentage of the total image width
-   - "h" = the object's height as a percentage of the total image height
-3. Give it a funny PLC module label that references the real object
+Your job is to analyze the uploaded image and identify ONLY 3 clearly visible real objects in the photo. These detections must be visually grounded to the actual object location in the image.
 
-POSITIONING IS CRITICAL. Think about it step by step:
-- If an object is in the center of the image, top should be ~35-45 and left should be ~35-45
-- If an object is in the top-left corner, top should be ~5-15 and left should be ~5-15
-- If an object is at the bottom, top should be ~65-85
-- Size the box to tightly fit the object, not too big, not too small
+CRITICAL RULES:
+1. Detect only objects that are actually visible in the image.
+2. Do NOT invent or guess objects that are not clearly seen.
+3. Do NOT place boxes on empty space, background, decorations, shadows, or vague areas.
+4. Each box must tightly surround the real object it refers to.
+5. Choose the 3 most visually obvious objects in the image.
+6. If fewer than 3 clear objects are available, return fewer.
+7. Prefer large, distinct foreground objects over tiny or ambiguous ones.
+8. The label must match the boxed object exactly.
+9. The analysis must refer ONLY to the objects that were boxed.
+10. Output normalized bounding boxes using percentages:
+   x: left edge as percentage of image width (0-100)
+   y: top edge as percentage of image height (0-100)
+   width: box width as percentage of image width
+   height: box height as percentage of image height
 
-Label examples:
-- A shoe → "LV Shoe Module: 1756-SHOE"
-- A coffee mug → "Liquid Level Sensor: 1756-LL16"
-- A person's face → "HMI Display Unit: S7-FACE"
-- A keyboard → "Operator Input Terminal: 1756-OIT"
-- A monitor → "Visual Diagnostic Panel: 1756-VDP"
-- A post-it note → "Temporary Fix Documentation: REV-2007"
-- Actual PLC modules → use their real part numbers
+The app is a joke, so the descriptions can be funny and fake-industrial, BUT the visual grounding must be accurate.
 
-Respond with ONLY a valid JSON array. No markdown, no code fences, no explanation.
-[{"label":"LV Shoe Module: 1756-SHOE","confidence":95.2,"top":60,"left":10,"w":20,"h":25,"fault":false}]
+GOOD EXAMPLE:
+- If you see a cup of ice, box the cup itself and describe it humorously as a cooling module.
+- If you see a shoe, the box must go on the visible shoe only, not nearby decor or empty space.
 
-Rules:
-- EXACTLY 3 objects, no more
-- One must have "fault":true — pick the funniest object
-- confidence 85-99
-- Boxes must NOT overlap
-- Return ONLY the JSON array`
-            },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Pick exactly 3 distinct objects in this image. For each, carefully estimate its exact position and size as percentages of the image dimensions. Return bounding boxes as a JSON array." },
-                { type: "image_url", image_url: { url: image } }
-              ]
-            }
-          ],
-          max_tokens: 500,
-        }),
+BAD EXAMPLE:
+- Boxing a random area and calling it a shoe
+- Labeling something that is not visible
+- Referring in the analysis to objects that were not boxed
+
+Return ONLY valid JSON in this exact schema, no markdown, no code fences:
+
+{
+  "detections": [
+    {
+      "label": "short visible object name",
+      "funny_name": "fake PLC-style component name",
+      "confidence": 95.2,
+      "bbox": {
+        "x": 10,
+        "y": 60,
+        "width": 20,
+        "height": 25
+      },
+      "fault": false,
+      "reason": "brief explanation of what visible object this really is"
+    }
+  ],
+  "analysis": {
+    "module_detection": "2-3 sentences describing each detected object as a PLC module. Reference the exact objects you boxed. Deadpan technical tone.",
+    "io_summary": "I/O count based on what you see, e.g. '1 Analog Input (Chill Level), 1 Digital Output (Footwear Actuator)'",
+    "ladder_logic": "2-3 rungs of ladder logic in text format referencing the objects, e.g. |--] [--I:1/0---] [--I:1/3---( )--O:2/0--| labeled with a purpose like 'Coffee Refill Interlock Circuit'",
+    "fault_report": "Pick the funniest boxed object. Write a serious fault report with an absurd root cause in dry technical language.",
+    "confidence": "Overall confidence score like '62% (feels right)'"
+  }
+}`
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Analyze this image. Identify exactly 3 distinct visible objects, provide tight bounding boxes, and generate a humorous PLC analysis. Return ONLY valid JSON." },
+              { type: "image_url", image_url: { url: image } }
+            ]
+          }
+        ],
+        max_tokens: 1200,
       }),
+    });
 
-      // Call 2: Get full analysis text
-      fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-001",
-          messages: [
-            {
-              role: "system",
-              content: `You are SnapPLC™, an AI that analyzes photos and pretends everything is a PLC control system. You are deadpan, confident, and slightly absurd — this is a humorous April Fools product.
-
-Your approach:
-1. First, identify what objects are ACTUALLY in the image (a desk, a person, food, a real PLC, etc.)
-2. Then "translate" each real object into a PLC component with a funny technical label
-3. Write the analysis as if this translation is completely normal and expected
-
-When given an image, respond with EXACTLY this format:
-
-## Module Detection
-List 3-5 objects you see. For each one, state what it actually is and what PLC module you've classified it as. Use a deadpan technical tone. Example:
-- "Coffee mug identified as Liquid Level Sensor (1756-LL16) — 93% confidence. Current fill level: critically low."
-- "Post-it note classified as Temporary Fix Documentation (REV-2007) — 91% confidence. Contents undocumented."
-
-## I/O Summary
-Provide an I/O count based on what you see. If it's a desk with 3 monitors and a keyboard, maybe "3 Visual Output / 1 Operator Input / 2 Analog (coffee level, stress level)".
-
-## Ladder Logic
-Write 2-3 rungs of ladder logic in text format using standard notation like:
-|--] [--I:1/0---] [--I:1/3---( )--O:2/0--|
-Label each rung with a purpose that references the actual objects. Example: "Coffee Refill Interlock Circuit" or "Shoe Proximity Detection Rung".
-
-## Fault Report
-Pick the funniest object in the image and write a serious-sounding fault report about it. The root cause should be absurd but written in dry technical language. Example: "The LV Shoe module keeps attempting to upload firmware. The desk continues to halt unexpectedly. Root cause: Fashion."
-
-## Confidence
-End with an overall confidence score like "62% (feels right)" or "71% (close enough)".
-
-If the image IS a real PLC cabinet, still be funny but use actual technical terms. Reference specific modules you see and add dry commentary.`
-            },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Analyze this control panel image. Identify modules, reconstruct ladder logic, and generate a fault report." },
-                { type: "image_url", image_url: { url: image } }
-              ]
-            }
-          ],
-          max_tokens: 1000,
-        }),
-      }),
-    ]);
-
-    // Parse boxes
-    let boxes: unknown[] = [];
-    if (boxRes.ok) {
-      const boxData = await boxRes.json();
-      const raw = boxData.choices?.[0]?.message?.content || "[]";
-      const match = raw.match(/\[[\s\S]*\]/);
-      if (match) {
-        try {
-          boxes = JSON.parse(match[0]);
-        } catch {
-          // keep empty
-        }
-      }
+    if (!res.ok) {
+      const error = await res.text();
+      console.error("OpenRouter error:", error);
+      return Response.json({ error: "Analysis failed" }, { status: 500 });
     }
 
-    // Parse analysis
-    let analysis = "";
-    if (analysisRes.ok) {
-      const analysisData = await analysisRes.json();
-      analysis = analysisData.choices?.[0]?.message?.content || "Analysis unavailable.";
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content || "{}";
+
+    // Extract JSON from response (handle potential markdown wrapping)
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return Response.json({ error: "Invalid response format" }, { status: 500 });
     }
 
-    return Response.json({ boxes, analysis });
+    const parsed = JSON.parse(jsonMatch[0]);
+    return Response.json(parsed);
   } catch (error) {
     console.error("Analysis error:", error);
     return Response.json({ error: "Analysis failed" }, { status: 500 });

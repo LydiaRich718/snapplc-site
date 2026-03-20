@@ -69,7 +69,7 @@ export default function SnapPLC() {
   const [visibleBoxes, setVisibleBoxes] = useState(0);
   const [aiResponse, setAiResponse] = useState("");
   const [aiError, setAiError] = useState(false);
-  const [aiBoxes, setAiBoxes] = useState<Array<{ label: string; confidence: number; top: number; left: number; w: number; h: number; fault?: boolean }>>([]);
+  const [aiBoxes, setAiBoxes] = useState<Array<{ label: string; funny_name: string; confidence: number; bbox: { x: number; y: number; width: number; height: number }; fault?: boolean; reason?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -120,19 +120,30 @@ export default function SnapPLC() {
           const data = await res.json();
 
           // Show detection boxes one by one
-          if (data.boxes && data.boxes.length > 0) {
-            setAiBoxes(data.boxes);
+          if (data.detections && data.detections.length > 0) {
+            setAiBoxes(data.detections);
             setDemoStage("detecting");
-            for (let i = 0; i < data.boxes.length; i++) {
-              await new Promise(resolve => setTimeout(resolve, 500));
+            for (let i = 0; i < data.detections.length; i++) {
+              await new Promise(resolve => setTimeout(resolve, 600));
               setVisibleBoxes(i + 1);
             }
             await new Promise(resolve => setTimeout(resolve, 800));
           }
 
-          // Typewriter the analysis text
+          // Build analysis text from structured response
           setDemoStage("results");
-          const text = data.analysis || "Analysis unavailable.";
+          const a = data.analysis;
+          let text = "";
+          if (a) {
+            if (a.module_detection) text += "## Module Detection\n" + a.module_detection + "\n\n";
+            if (a.io_summary) text += "## I/O Summary\n" + a.io_summary + "\n\n";
+            if (a.ladder_logic) text += "## Ladder Logic\n" + a.ladder_logic + "\n\n";
+            if (a.fault_report) text += "## Fault Report\n" + a.fault_report + "\n\n";
+            if (a.confidence) text += "## Confidence\n" + a.confidence;
+          }
+          if (!text) text = "Analysis unavailable.";
+
+          // Typewriter effect
           let displayed = "";
           for (let i = 0; i < text.length; i++) {
             displayed += text[i];
@@ -282,9 +293,9 @@ export default function SnapPLC() {
                     )}
                     {/* Detection boxes — AI-positioned */}
                     {(demoStage === "detecting" || demoStage === "results") && aiBoxes.slice(0, visibleBoxes).map((box, i) => (
-                      <div key={i} style={{ position: "absolute", top: `${box.top}%`, left: `${box.left}%`, width: `${box.w}%`, height: `${box.h}%`, border: `2px solid ${box.fault ? "#f85149" : "#00d4ff"}`, borderRadius: 4, animation: "drawBox 0.4s ease-out both", zIndex: 3 }}>
+                      <div key={i} style={{ position: "absolute", top: `${box.bbox.y}%`, left: `${box.bbox.x}%`, width: `${box.bbox.width}%`, height: `${box.bbox.height}%`, border: `2px solid ${box.fault ? "#f85149" : "#00d4ff"}`, borderRadius: 4, animation: "drawBox 0.4s ease-out both", zIndex: 3 }}>
                         <div style={{ position: "absolute", top: -22, left: 0, background: "rgba(10,14,20,0.9)", border: `1px solid ${box.fault ? "#f85149" : "rgba(0,212,255,0.5)"}`, borderRadius: 4, padding: "2px 6px", fontSize: "0.6rem", fontFamily: "monospace", color: box.fault ? "#f85149" : "#00d4ff", whiteSpace: "nowrap" }}>
-                          {box.label} — {box.confidence}%
+                          {box.funny_name} — {box.confidence}%
                         </div>
                       </div>
                     ))}
