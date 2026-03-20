@@ -69,7 +69,6 @@ export default function SnapPLC() {
   const [visibleBoxes, setVisibleBoxes] = useState(0);
   const [aiResponse, setAiResponse] = useState("");
   const [aiError, setAiError] = useState(false);
-  const [aiBoxes, setAiBoxes] = useState<Array<{ label: string; funny_name: string; confidence: number; bbox: { x: number; y: number; width: number; height: number }; fault?: boolean; one_liner?: string; io_type?: string; io_tag?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -94,7 +93,6 @@ export default function SnapPLC() {
     setVisibleBoxes(0);
     setAiResponse("");
     setAiError(false);
-    setAiBoxes([]);
 
     // Convert image to base64 for API
     const reader = new FileReader();
@@ -107,8 +105,19 @@ export default function SnapPLC() {
         timeoutsRef.current.push(t);
       });
 
-      // At 2s, call the AI API
-      const t1 = setTimeout(async () => {
+      // Switch to detecting at 2s, start showing boxes
+      const t1 = setTimeout(() => {
+        setDemoStage("detecting");
+        DETECTION_BOXES.forEach((_, i) => {
+          const t = setTimeout(() => setVisibleBoxes(i + 1), 500 * (i + 1));
+          timeoutsRef.current.push(t);
+        });
+      }, 2000);
+      timeoutsRef.current.push(t1);
+
+      // At 5s, call the AI API and stream results
+      const t2 = setTimeout(async () => {
+        setDemoStage("results");
         try {
           const res = await fetch("/api/analyze", {
             method: "POST",
@@ -117,55 +126,23 @@ export default function SnapPLC() {
           });
 
           if (!res.ok) throw new Error("API error");
-          const data = await res.json();
 
-          // Show detection boxes one by one
-          if (data.detections && data.detections.length > 0) {
-            setAiBoxes(data.detections);
-            setDemoStage("detecting");
-            for (let i = 0; i < data.detections.length; i++) {
-              await new Promise(resolve => setTimeout(resolve, 600));
-              setVisibleBoxes(i + 1);
-            }
-            await new Promise(resolve => setTimeout(resolve, 800));
-          }
+          const bodyReader = res.body?.getReader();
+          if (!bodyReader) throw new Error("No stream");
 
-          // Build analysis text from structured response
-          setDemoStage("results");
+          const decoder = new TextDecoder();
           let text = "";
-          if (data.module_detection_lines?.length) {
-            text += "## Module Detection\n" + data.module_detection_lines.join("\n") + "\n\n";
+          while (true) {
+            const { done, value } = await bodyReader.read();
+            if (done) break;
+            text += decoder.decode(value);
+            setAiResponse(text);
           }
-          if (data.io_summary_lines?.length) {
-            text += "## I/O Summary\n" + data.io_summary_lines.join("\n") + "\n\n";
-          }
-          if (data.ladder_logic_lines?.length) {
-            text += "## Ladder Logic\n" + data.ladder_logic_lines.join("\n") + "\n\n";
-          }
-          if (data.fault_report) {
-            text += "## Fault Report\n" + data.fault_report + "\n\n";
-          }
-          if (data.confidence_text) {
-            text += "## Confidence\n" + data.confidence_text;
-          }
-          if (!text) text = "Analysis unavailable.";
-
-          // Typewriter effect
-          let displayed = "";
-          for (let i = 0; i < text.length; i++) {
-            displayed += text[i];
-            if (i % 3 === 0) {
-              setAiResponse(displayed);
-              await new Promise(resolve => setTimeout(resolve, 8));
-            }
-          }
-          setAiResponse(text);
         } catch {
           setAiError(true);
-          setDemoStage("results");
         }
-      }, 2000);
-      timeoutsRef.current.push(t1);
+      }, 5000);
+      timeoutsRef.current.push(t2);
     };
     reader.readAsDataURL(file);
   }
@@ -298,11 +275,11 @@ export default function SnapPLC() {
                     {(demoStage === "scanning" || demoStage === "detecting") && (
                       <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "#00d4ff", boxShadow: "0 0 20px #00d4ff, 0 0 60px rgba(0,212,255,0.3)", animation: "scanLine 2s ease-in-out infinite", zIndex: 2 }} />
                     )}
-                    {/* Detection boxes — AI-positioned */}
-                    {(demoStage === "detecting" || demoStage === "results") && aiBoxes.slice(0, visibleBoxes).map((box, i) => (
-                      <div key={i} style={{ position: "absolute", top: `${box.bbox.y}%`, left: `${box.bbox.x}%`, width: `${box.bbox.width}%`, height: `${box.bbox.height}%`, border: `2px solid ${box.fault ? "#f85149" : "#00d4ff"}`, borderRadius: 4, animation: "drawBox 0.4s ease-out both", zIndex: 3 }}>
+                    {/* Detection boxes */}
+                    {(demoStage === "detecting" || demoStage === "results") && DETECTION_BOXES.slice(0, visibleBoxes).map((box) => (
+                      <div key={box.id} style={{ position: "absolute", top: box.top, left: box.left, width: box.w, height: box.h, border: `2px solid ${box.fault ? "#f85149" : "#00d4ff"}`, borderRadius: 4, animation: "drawBox 0.4s ease-out both", zIndex: 3 }}>
                         <div style={{ position: "absolute", top: -22, left: 0, background: "rgba(10,14,20,0.9)", border: `1px solid ${box.fault ? "#f85149" : "rgba(0,212,255,0.5)"}`, borderRadius: 4, padding: "2px 6px", fontSize: "0.6rem", fontFamily: "monospace", color: box.fault ? "#f85149" : "#00d4ff", whiteSpace: "nowrap" }}>
-                          {box.funny_name} — {box.confidence}%
+                          {box.label} — {box.confidence}%
                         </div>
                       </div>
                     ))}
