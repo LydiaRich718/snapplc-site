@@ -66,10 +66,17 @@ export default function SnapPLC() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [demoStage, setDemoStage] = useState<"idle" | "scanning" | "detecting" | "results">("idle");
   const [visibleLines, setVisibleLines] = useState(0);
-  const [visibleBoxes, setVisibleBoxes] = useState(0);
-  const [aiResponse, setAiResponse] = useState("");
+  const [aiResult, setAiResult] = useState<{
+    detections?: Array<{ real_object: string; plc_translation: string; confidence: number; bbox: { x: number; y: number; width: number; height: number }; one_liner: string }>;
+    module_detection_lines?: string[];
+    ladder_logic_lines?: string[];
+    fault_report?: string;
+    confidence_text?: string;
+  } | null>(null);
   const [aiError, setAiError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearTimeouts = useCallback(() => {
@@ -83,6 +90,47 @@ export default function SnapPLC() {
     fileInputRef.current?.click();
   }
 
+  function drawBoxes(detections: NonNullable<typeof aiResult>["detections"]) {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img || !detections?.length) return;
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    detections.forEach((d) => {
+      const x = d.bbox.x * canvas.width;
+      const y = d.bbox.y * canvas.height;
+      const w = d.bbox.width * canvas.width;
+      const h = d.bbox.height * canvas.height;
+
+      // Box
+      ctx.strokeStyle = "#00d4ff";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, w, h);
+
+      // Label background
+      const label = `${d.plc_translation} — ${Math.round(d.confidence * 100)}%`;
+      ctx.font = "bold 14px monospace";
+      const textWidth = ctx.measureText(label).width;
+      ctx.fillStyle = "rgba(10,14,20,0.9)";
+      ctx.fillRect(x, y - 22, textWidth + 12, 20);
+
+      // Label border
+      ctx.strokeStyle = "rgba(0,212,255,0.5)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y - 22, textWidth + 12, 20);
+
+      // Label text
+      ctx.fillStyle = "#00d4ff";
+      ctx.fillText(label, x + 6, y - 7);
+    });
+  }
+
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -90,8 +138,7 @@ export default function SnapPLC() {
     setPreviewUrl(URL.createObjectURL(file));
     setDemoStage("scanning");
     setVisibleLines(0);
-    setVisibleBoxes(0);
-    setAiResponse("");
+    setAiResult(null);
     setAiError(false);
 
     // Convert image to base64 for API
@@ -105,19 +152,12 @@ export default function SnapPLC() {
         timeoutsRef.current.push(t);
       });
 
-      // Switch to detecting at 2s, start showing boxes
-      const t1 = setTimeout(() => {
-        setDemoStage("detecting");
-        DETECTION_BOXES.forEach((_, i) => {
-          const t = setTimeout(() => setVisibleBoxes(i + 1), 500 * (i + 1));
-          timeoutsRef.current.push(t);
-        });
-      }, 2000);
+      // At 2s, switch to detecting stage
+      const t1 = setTimeout(() => setDemoStage("detecting"), 2000);
       timeoutsRef.current.push(t1);
 
-      // At 5s, call the AI API and stream results
+      // At 3s, call the AI API
       const t2 = setTimeout(async () => {
-        setDemoStage("results");
         try {
           const res = await fetch("/api/analyze", {
             method: "POST",
@@ -126,22 +166,18 @@ export default function SnapPLC() {
           });
 
           if (!res.ok) throw new Error("API error");
+          const data = await res.json();
 
-          const bodyReader = res.body?.getReader();
-          if (!bodyReader) throw new Error("No stream");
+          setAiResult(data);
+          setDemoStage("results");
 
-          const decoder = new TextDecoder();
-          let text = "";
-          while (true) {
-            const { done, value } = await bodyReader.read();
-            if (done) break;
-            text += decoder.decode(value);
-            setAiResponse(text);
-          }
+          // Draw boxes after a brief delay (let image render)
+          setTimeout(() => drawBoxes(data.detections), 100);
         } catch {
           setAiError(true);
+          setDemoStage("results");
         }
-      }, 5000);
+      }, 3000);
       timeoutsRef.current.push(t2);
     };
     reader.readAsDataURL(file);
@@ -270,19 +306,12 @@ export default function SnapPLC() {
                   </div>
                 ) : (
                   <>
-                    <img src={previewUrl} alt="Uploaded cabinet" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img ref={imgRef} src={previewUrl} alt="Uploaded cabinet" style={{ width: "100%", height: "100%", objectFit: "cover" }} onLoad={() => { if (aiResult?.detections) drawBoxes(aiResult.detections); }} />
+                    <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 3 }} />
                     {/* Scan line overlay */}
                     {(demoStage === "scanning" || demoStage === "detecting") && (
                       <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "#00d4ff", boxShadow: "0 0 20px #00d4ff, 0 0 60px rgba(0,212,255,0.3)", animation: "scanLine 2s ease-in-out infinite", zIndex: 2 }} />
                     )}
-                    {/* Detection boxes */}
-                    {(demoStage === "detecting" || demoStage === "results") && DETECTION_BOXES.slice(0, visibleBoxes).map((box) => (
-                      <div key={box.id} style={{ position: "absolute", top: box.top, left: box.left, width: box.w, height: box.h, border: `2px solid ${box.fault ? "#f85149" : "#00d4ff"}`, borderRadius: 4, animation: "drawBox 0.4s ease-out both", zIndex: 3 }}>
-                        <div style={{ position: "absolute", top: -22, left: 0, background: "rgba(10,14,20,0.9)", border: `1px solid ${box.fault ? "#f85149" : "rgba(0,212,255,0.5)"}`, borderRadius: 4, padding: "2px 6px", fontSize: "0.6rem", fontFamily: "monospace", color: box.fault ? "#f85149" : "#00d4ff", whiteSpace: "nowrap" }}>
-                          {box.label} — {box.confidence}%
-                        </div>
-                      </div>
-                    ))}
                   </>
                 )}
                 <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
@@ -335,23 +364,54 @@ export default function SnapPLC() {
                       <div style={{ color: "#f85149", fontSize: "0.8rem" }}>
                         ⚠ Analysis engine unavailable. Try again later.
                       </div>
-                    ) : aiResponse ? (
-                      <div style={{ fontSize: "0.75rem", color: "#e6edf3", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
-                        {aiResponse.split("\n").map((line, i) => {
-                          if (line.startsWith("## ")) {
-                            return <div key={i} style={{ color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", marginTop: i > 0 ? "1.25rem" : 0, marginBottom: "0.4rem" }}>▸ {line.replace("## ", "").toUpperCase()}</div>;
-                          }
-                          if (line.startsWith("|")) {
-                            return <div key={i} style={{ fontFamily: "monospace", color: "#3fb950", fontSize: "0.7rem", padding: "1px 0" }}>{line}</div>;
-                          }
-                          if (line.toLowerCase().includes("fault") || line.toLowerCase().includes("root cause")) {
-                            return <div key={i} style={{ color: "#f85149", padding: "1px 0" }}>{line}</div>;
-                          }
-                          if (line.toLowerCase().includes("confidence")) {
-                            return <div key={i} style={{ color: "#d29922", fontStyle: "italic", marginTop: "0.5rem", padding: "1px 0" }}>{line}</div>;
-                          }
-                          return <div key={i} style={{ color: "#8b949e", padding: "1px 0" }}>{line}</div>;
-                        })}
+                    ) : aiResult ? (
+                      <div style={{ fontSize: "0.75rem", lineHeight: 1.8 }}>
+                        {/* Module Detection */}
+                        {aiResult.module_detection_lines && aiResult.module_detection_lines.length > 0 && (
+                          <div style={{ marginBottom: "1.25rem" }}>
+                            <div style={{ color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.4rem" }}>▸ MODULE DETECTION</div>
+                            {aiResult.module_detection_lines.map((line: string, i: number) => (
+                              <div key={i} style={{ color: "#8b949e", padding: "2px 0" }}>{line}</div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* One-liners from detections */}
+                        {aiResult.detections && aiResult.detections.length > 0 && (
+                          <div style={{ marginBottom: "1.25rem" }}>
+                            <div style={{ color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.4rem" }}>▸ DIAGNOSTICS</div>
+                            {aiResult.detections.map((d, i: number) => (
+                              <div key={i} style={{ color: "#e6edf3", padding: "2px 0" }}>
+                                <span style={{ color: "#00d4ff" }}>{d.plc_translation}:</span> {d.one_liner}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Ladder Logic */}
+                        {aiResult.ladder_logic_lines && aiResult.ladder_logic_lines.length > 0 && (
+                          <div style={{ marginBottom: "1.25rem" }}>
+                            <div style={{ color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.4rem" }}>▸ LADDER LOGIC</div>
+                            {aiResult.ladder_logic_lines.map((line: string, i: number) => (
+                              <div key={i} style={{ color: line.startsWith("|") ? "#3fb950" : "#8b949e", fontFamily: "monospace", fontSize: "0.7rem", padding: "1px 0" }}>{line}</div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Fault Report */}
+                        {aiResult.fault_report && (
+                          <div style={{ marginBottom: "1.25rem" }}>
+                            <div style={{ color: "#f85149", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.4rem" }}>▸ FAULT REPORT</div>
+                            <div style={{ color: "#f85149", padding: "2px 0" }}>{aiResult.fault_report}</div>
+                          </div>
+                        )}
+
+                        {/* Confidence */}
+                        {aiResult.confidence_text && (
+                          <div style={{ color: "#d29922", fontStyle: "italic", marginTop: "0.5rem" }}>
+                            Confidence: {aiResult.confidence_text}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div style={{ color: "#4a5568", fontSize: "0.8rem" }}>
