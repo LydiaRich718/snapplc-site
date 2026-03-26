@@ -69,6 +69,7 @@ export default function SnapPLC() {
   const [aiResult, setAiResult] = useState<{
     detections?: Array<{ real_object: string; plc_translation: string; confidence: number; bbox: { x: number; y: number; width: number; height: number }; one_liner: string }>;
     module_detection_lines?: string[];
+    ladder_rungs?: Array<{ contacts: string[]; coil: string }>;
     ladder_logic_lines?: string[];
     fault_report?: string;
     confidence_text?: string;
@@ -153,10 +154,21 @@ export default function SnapPLC() {
     setAiResult(null);
     setAiError(false);
 
-    // Convert image to base64 for API
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
+    // Resize image client-side to avoid 413 errors
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1024;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        const scale = MAX / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      const base64 = c.toDataURL("image/jpeg", 0.7);
 
       // Terminal lines appear during scanning
       TERMINAL_LINES.forEach((_, i) => {
@@ -192,7 +204,7 @@ export default function SnapPLC() {
       }, 3000);
       timeoutsRef.current.push(t2);
     };
-    reader.readAsDataURL(file);
+    img.src = URL.createObjectURL(file);
   }
 
   function scrollToDemo() {
@@ -401,14 +413,19 @@ export default function SnapPLC() {
                         )}
 
                         {/* Ladder Logic */}
-                        {aiResult.ladder_logic_lines && aiResult.ladder_logic_lines.length > 0 && (
+                        {(aiResult.ladder_rungs?.length || aiResult.ladder_logic_lines?.length) ? (
                           <div style={{ marginBottom: "1.25rem" }}>
                             <div style={{ color: "#00d4ff", fontWeight: 700, fontSize: "0.8rem", marginBottom: "0.4rem" }}>▸ LADDER LOGIC</div>
-                            {aiResult.ladder_logic_lines.map((line: string, i: number) => (
-                              <div key={i} style={{ color: line.startsWith("|") ? "#3fb950" : "#8b949e", fontFamily: "monospace", fontSize: "0.7rem", padding: "1px 0" }}>{line}</div>
+                            {aiResult.ladder_rungs?.map((rung, i) => (
+                              <div key={`rung-${i}`} style={{ color: "#3fb950", fontFamily: "monospace", fontSize: "0.7rem", padding: "1px 0", whiteSpace: "pre" }}>
+                                {"|----" + rung.contacts.map(c => `[${c}]`).join("----") + `----(${rung.coil})----|`}
+                              </div>
+                            ))}
+                            {aiResult.ladder_logic_lines?.map((line: string, i: number) => (
+                              <div key={`text-${i}`} style={{ color: "#8b949e", fontFamily: "monospace", fontSize: "0.7rem", padding: "1px 0" }}>{line}</div>
                             ))}
                           </div>
-                        )}
+                        ) : null}
 
                         {/* Fault Report */}
                         {aiResult.fault_report && (

@@ -82,7 +82,8 @@ You are a very serious diagnostic machine that is completely wrong about what th
   GOOD: "Root cause: operator introduced foreign textile into the control environment. Warranty void."
   GOOD: "Critical failure traced to unregistered beverage container within 0.3m of primary logic controller. Recommend immediate removal and disciplinary review."
 
-- ladder_logic_lines: Must reference the detected objects by their fake PLC names (plc_translation).
+- ladder_rungs: Return 2-3 rungs. Each rung has "contacts" (array of SHORT uppercase module names derived from plc_translation, e.g. "THERMAL_RES" not "Thermal Reservoir Module") and a "coil" (an uppercase alarm/mode label relevant to the fault, e.g. "EMERGENCY_MODE", "RESTOCK_ALARM", "CONTAINMENT_LOCK"). Contacts and coils must reference the detected objects.
+- ladder_logic_lines: 1-2 plain-text lines summarizing the logic using the fake PLC names (plc_translation).
 
 - confidence_text: Always slightly too high and vaguely threatening.
   GOOD: "94% (do not question this)"
@@ -115,9 +116,15 @@ OUTPUT FORMAT (STRICT JSON ONLY)
     "One line per detection referencing the plc_translation and confidence"
   ],
 
+  "ladder_rungs": [
+    {
+      "contacts": ["SHORT_MODULE_NAME_A", "SHORT_MODULE_NAME_B"],
+      "coil": "EMERGENCY_MODE"
+    }
+  ],
+
   "ladder_logic_lines": [
-    "ASCII ladder logic line using the fake PLC names from detections",
-    "Short description line referencing the detected objects"
+    "Plain-text description referencing the detected objects"
   ],
 
   "fault_report": "Deadpan fault report blaming something absurd with total confidence. Must include a root cause.",
