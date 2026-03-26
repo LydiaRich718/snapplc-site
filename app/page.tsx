@@ -96,34 +96,54 @@ export default function SnapPLC() {
     const img = imgRef.current;
     if (!canvas || !img || !detections?.length) return;
 
+    // 1. Natural dimensions (actual pixel size of the image)
+    const natW = img.naturalWidth;
+    const natH = img.naturalHeight;
+
+    // 2. Displayed dimensions (how big the element appears on screen)
     const rect = img.getBoundingClientRect();
+    const containerW = rect.width;
+    const containerH = rect.height;
+
+    // Since object-fit:contain may letterbox, find the actual rendered image area
+    const fitScale = Math.min(containerW / natW, containerH / natH);
+    const displayedW = natW * fitScale;
+    const displayedH = natH * fitScale;
+    const offsetX = (containerW - displayedW) / 2;
+    const offsetY = (containerH - displayedH) / 2;
+
+    // Position canvas exactly over the rendered image (not the letterbox)
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    canvas.width = displayedW * dpr;
+    canvas.height = displayedH * dpr;
+    canvas.style.width = `${displayedW}px`;
+    canvas.style.height = `${displayedH}px`;
+    canvas.style.left = `${offsetX}px`;
+    canvas.style.top = `${offsetY}px`;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.clearRect(0, 0, displayedW, displayedH);
 
-    // Calculate where the image actually renders inside the container (object-fit: contain)
-    const containerW = rect.width;
-    const containerH = rect.height;
-    const natW = img.naturalWidth;
-    const natH = img.naturalHeight;
-    const scale = Math.min(containerW / natW, containerH / natH);
-    const renderedW = natW * scale;
-    const renderedH = natH * scale;
-    const offsetX = (containerW - renderedW) / 2;
-    const offsetY = (containerH - renderedH) / 2;
+    // 3. Scale factors: displayedSize / naturalSize
+    const scaleX = displayedW / natW;
+    const scaleY = displayedH / natH;
 
+    // DEBUG: red dots at all 4 corners of the image to confirm coordinate origin
+    ctx.fillStyle = "#ff0000";
+    const dotSize = 6;
+    ctx.fillRect(0, 0, dotSize, dotSize);                                    // top-left
+    ctx.fillRect(displayedW - dotSize, 0, dotSize, dotSize);                  // top-right
+    ctx.fillRect(0, displayedH - dotSize, dotSize, dotSize);                  // bottom-left
+    ctx.fillRect(displayedW - dotSize, displayedH - dotSize, dotSize, dotSize); // bottom-right
+
+    // 4. Draw boxes — multiply bbox pixel coords by scale factors, relative to image top-left
     detections.forEach((d) => {
-      const x = offsetX + d.bbox.x * renderedW;
-      const y = offsetY + d.bbox.y * renderedH;
-      const w = d.bbox.width * renderedW;
-      const h = d.bbox.height * renderedH;
+      const x = d.bbox.x * natW * scaleX;
+      const y = d.bbox.y * natH * scaleY;
+      const w = d.bbox.width * natW * scaleX;
+      const h = d.bbox.height * natH * scaleY;
 
       // Box
       ctx.strokeStyle = "#00d4ff";
@@ -132,7 +152,7 @@ export default function SnapPLC() {
 
       // Label
       const label = `${d.plc_translation} — ${Math.round(d.confidence * 100)}%`;
-      const fontSize = Math.max(10, Math.min(14, renderedW / 35));
+      const fontSize = Math.max(10, Math.min(14, displayedW / 35));
       ctx.font = `bold ${fontSize}px monospace`;
       const textWidth = ctx.measureText(label).width;
       const labelH = fontSize + 6;
@@ -359,7 +379,7 @@ export default function SnapPLC() {
                 ) : (
                   <>
                     <img ref={imgRef} src={previewUrl} alt="Uploaded cabinet" style={{ width: "100%", height: "100%", objectFit: "contain", background: "#0a0e14" }} onLoad={() => { if (aiResult?.detections) drawBoxes(aiResult.detections); }} />
-                    <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 3 }} />
+                    <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 3 }} />
                     {/* Scan line overlay */}
                     {(demoStage === "scanning" || demoStage === "detecting") && (
                       <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "#00d4ff", boxShadow: "0 0 20px #00d4ff, 0 0 60px rgba(0,212,255,0.3)", animation: "scanLine 2s ease-in-out infinite", zIndex: 2 }} />
