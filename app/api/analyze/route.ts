@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         "X-Title": "SnapPLC",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: "google/gemini-2.0-pro-exp-02-05",
         messages: [
           {
             role: "system",
