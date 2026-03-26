@@ -96,7 +96,6 @@ export default function SnapPLC() {
     const img = imgRef.current;
     if (!canvas || !img || !detections?.length) return;
 
-    // Use the actual rendered size of the image element, not naturalWidth
     const rect = img.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
@@ -109,14 +108,22 @@ export default function SnapPLC() {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    const displayW = rect.width;
-    const displayH = rect.height;
+    // Calculate where the image actually renders inside the container (object-fit: contain)
+    const containerW = rect.width;
+    const containerH = rect.height;
+    const natW = img.naturalWidth;
+    const natH = img.naturalHeight;
+    const scale = Math.min(containerW / natW, containerH / natH);
+    const renderedW = natW * scale;
+    const renderedH = natH * scale;
+    const offsetX = (containerW - renderedW) / 2;
+    const offsetY = (containerH - renderedH) / 2;
 
     detections.forEach((d) => {
-      const x = d.bbox.x * displayW;
-      const y = d.bbox.y * displayH;
-      const w = d.bbox.width * displayW;
-      const h = d.bbox.height * displayH;
+      const x = offsetX + d.bbox.x * renderedW;
+      const y = offsetY + d.bbox.y * renderedH;
+      const w = d.bbox.width * renderedW;
+      const h = d.bbox.height * renderedH;
 
       // Box
       ctx.strokeStyle = "#00d4ff";
@@ -125,7 +132,7 @@ export default function SnapPLC() {
 
       // Label
       const label = `${d.plc_translation} — ${Math.round(d.confidence * 100)}%`;
-      const fontSize = Math.max(10, Math.min(14, displayW / 35));
+      const fontSize = Math.max(10, Math.min(14, renderedW / 35));
       ctx.font = `bold ${fontSize}px monospace`;
       const textWidth = ctx.measureText(label).width;
       const labelH = fontSize + 6;
@@ -340,7 +347,7 @@ export default function SnapPLC() {
                   </div>
                 ) : (
                   <>
-                    <img ref={imgRef} src={previewUrl} alt="Uploaded cabinet" style={{ width: "100%", height: "100%", objectFit: "cover" }} onLoad={() => { if (aiResult?.detections) drawBoxes(aiResult.detections); }} />
+                    <img ref={imgRef} src={previewUrl} alt="Uploaded cabinet" style={{ width: "100%", height: "100%", objectFit: "contain", background: "#0a0e14" }} onLoad={() => { if (aiResult?.detections) drawBoxes(aiResult.detections); }} />
                     <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 3 }} />
                     {/* Scan line overlay */}
                     {(demoStage === "scanning" || demoStage === "detecting") && (
