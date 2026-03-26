@@ -151,6 +151,17 @@ export default function SnapPLC() {
     });
   }
 
+  // Redraw boxes when container resizes (window resize, device rotation)
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+    const observer = new ResizeObserver(() => {
+      if (aiResult?.detections) drawBoxes(aiResult.detections);
+    });
+    observer.observe(img);
+    return () => observer.disconnect();
+  }, [aiResult]);
+
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
