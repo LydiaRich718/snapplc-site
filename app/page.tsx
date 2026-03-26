@@ -156,6 +156,10 @@ export default function SnapPLC() {
 
     // Resize image client-side to avoid 413 errors
     const img = new Image();
+    img.onerror = () => {
+      setAiError(true);
+      setDemoStage("results");
+    };
     img.onload = () => {
       const MAX = 1024;
       let w = img.width, h = img.height;
@@ -168,7 +172,13 @@ export default function SnapPLC() {
       c.width = w;
       c.height = h;
       c.getContext("2d")!.drawImage(img, 0, 0, w, h);
-      const base64 = c.toDataURL("image/jpeg", 0.7);
+      // Compress progressively until under 750KB base64
+      let quality = 0.7;
+      let base64 = c.toDataURL("image/jpeg", quality);
+      while (base64.length > 750_000 && quality > 0.2) {
+        quality -= 0.1;
+        base64 = c.toDataURL("image/jpeg", quality);
+      }
 
       // Terminal lines appear during scanning
       TERMINAL_LINES.forEach((_, i) => {
